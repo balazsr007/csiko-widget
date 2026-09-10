@@ -438,6 +438,7 @@ function addMare() {
           fedezesDatum: date,
           checklist: {},
           registryId: selected.azonosito,
+          tenyeszto: selected.tenyeszto,
         });
         state.activeIndex = state.mares.length - 1;
         saveData();
@@ -528,7 +529,13 @@ function firstRunSetup() {
     if (selected) {
       askDate("", (date) => {
         state.mares = [
-          { name: selected.nev, fedezesDatum: date, checklist: {}, registryId: selected.azonosito },
+          {
+            name: selected.nev,
+            fedezesDatum: date,
+            checklist: {},
+            registryId: selected.azonosito,
+            tenyeszto: selected.tenyeszto,
+          },
         ];
         state.activeIndex = 0;
         saveData();
@@ -678,6 +685,8 @@ function renderInfo(mare) {
   const triSzin = TRIMESZTER_SZINEK[tri - 1];
   const triJavaslat = TRIMESZTER_JAVASLAT[tri - 1];
 
+  const felugyelo = getFelugyeloTenyesztoBol(mare.tenyeszto);
+
   box.innerHTML = `
     <div>
       <div class="label">Utolso sikeres fedeztetes</div>
@@ -691,6 +700,14 @@ function renderInfo(mare) {
       <div class="label">Trimeszter / nap</div>
       <div class="value" style="color:${triSzin}">${tri}/3 (${nap}. nap)</div>
     </div>
+    ${
+      felugyelo
+        ? `<div>
+            <div class="label">Lófelügyelő</div>
+            <div class="value">${felugyelo}</div>
+          </div>`
+        : ""
+    }
     <div class="trimeszter-advice" style="color:${triSzin}">${triJavaslat}</div>
   `;
 }

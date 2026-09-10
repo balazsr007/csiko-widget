@@ -79,12 +79,18 @@ Claude-beszélgetésbe, és kérd meg, hogy cserélje le a
 
 ## Lófelügyelő-megjelenítés
 
-Kanca kereséskor minden találatnál egy kis, alapból összecsukott
-"▸ Lófelügyelő" sáv jelenik meg — koppints/kattints rá, hogy
-kinyíljon és megmutassa, ki az adott megyéhez tartozó lófelügyelő
-(a fajtaegyesület által megadott lista alapján). A megye a
-kancaregiszter-bejegyzés tenyésztő-adatából (megye-kód) derül ki
-automatikusan.
+**Két helyen is látszik**, ha a kanca a kancaregiszterből lett
+kiválasztva:
+1. Kereséskor minden találatnál egy kis, alapból összecsukott
+   "▸ Lófelügyelő" sáv jelenik meg — koppints/kattints rá, hogy
+   kinyíljon és megmutassa, ki az adott megyéhez tartozó lófelügyelő.
+2. **A fő képernyőn is állandóan látszik** a kiválasztott kancánál, a
+   "Trimeszter / nap" mellett — nem kell hozzá semmit kinyitni.
+
+A megye a kancaregiszter-bejegyzés tenyésztő-adatából (megye-kód)
+derül ki automatikusan, a fajtaegyesület által megadott lista alapján.
+Kézzel megadott (nem a regiszterből választott) kancáknál nincs
+lófelügyelő-információ, mert nincs hozzá megye-adat.
 
 ## Kanca-fénykép
 
