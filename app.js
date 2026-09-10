@@ -153,6 +153,9 @@ function showInputModal({ title, placeholder = "", initialValue = "", onSubmit }
     </div>`;
   const input = document.getElementById("modal-input");
   input.focus();
+  input.addEventListener("focus", () => {
+    setTimeout(() => input.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+  });
   document.getElementById("modal-cancel").onclick = closeModal;
   document.getElementById("modal-backdrop").onclick = (e) => {
     if (e.target.id === "modal-backdrop") closeModal();
@@ -217,6 +220,9 @@ function showMareSearchModal(onSelect) {
   const input = document.getElementById("mare-search-input");
   const resultsEl = document.getElementById("mare-search-results");
   input.focus();
+  input.addEventListener("focus", () => {
+    setTimeout(() => input.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
+  });
 
   function renderResults(query) {
     const q = query.trim().toLowerCase();
@@ -745,5 +751,24 @@ async function init() {
     renderAll();
   }
 }
+
+// ======================================================================
+// Mobil billentyuzet-kezeles: a modal-ablakok a lathato (billentyuzet
+// feletti) teruletet kovessek, ne a teljes, billentyuzet altal reszben
+// eltakart kepernyot.
+// ======================================================================
+function setupViewportHeightFix() {
+  function update() {
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty("--vvh", `${h}px`);
+  }
+  update();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", update);
+    window.visualViewport.addEventListener("scroll", update);
+  }
+  window.addEventListener("resize", update);
+}
+setupViewportHeightFix();
 
 document.addEventListener("DOMContentLoaded", init);
