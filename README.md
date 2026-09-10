@@ -77,6 +77,15 @@ Az adatbázis évente frissül a forrásoldalon
 Claude-beszélgetésbe, és kérd meg, hogy cserélje le a
 `kancaregiszter.json`-t, majd töltsd fel újra a mappát GitHubra.
 
+## Lófelügyelő-megjelenítés
+
+Kanca kereséskor minden találatnál egy kis, alapból összecsukott
+"▸ Lófelügyelő" sáv jelenik meg — koppints/kattints rá, hogy
+kinyíljon és megmutassa, ki az adott megyéhez tartozó lófelügyelő
+(a fajtaegyesület által megadott lista alapján). A megye a
+kancaregiszter-bejegyzés tenyésztő-adatából (megye-kód) derül ki
+automatikusan.
+
 ## Kanca-fénykép
 
 A ⋮ menüben ("Kanca / beállítások") feltölthetsz egy fényképet az

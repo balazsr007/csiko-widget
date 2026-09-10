@@ -14,6 +14,65 @@ const TRIMESZTER_JAVASLAT = [
   "Csak futoszar / szoron, vagta nelkul",
 ];
 
+// Megyenkenti lofelugyelok (a fajtaegyesulet altal megadott lista alapjan)
+const FELUGYELOK_MEGYE = {
+  "Budapest": ["Abay Pál"],
+  "Pest": ["Abay Pál"],
+  "Nógrád": ["Abay Pál"],
+  "Békés": ["Faluhelyi Tibor"],
+  "Csongrád": ["Faluhelyi Tibor"],
+  "Borsod-Abaúj-Zemplén": ["Gál Ferenc", "Novotni Péter"],
+  "Heves": ["Gál Ferenc"],
+  "Jász-Nagykun-Szolnok": ["Gál Ferenc"],
+  "Baranya": ["Kassanin Milán"],
+  "Somogy": ["Kassanin Milán"],
+  "Bács-Kiskun": ["Málik Zoltán"],
+  "Tolna": ["Málik Zoltán"],
+  "Hajdú-Bihar": ["Novotni Péter"],
+  "Szabolcs-Szatmár-Bereg": ["Novotni Péter"],
+  "Győr-Moson-Sopron": ["Simon Gábor"],
+  "Vas": ["Simon Gábor"],
+  "Zala": ["Simon Gábor"],
+  "Fejér": ["Szakál Endre"],
+  "Komárom-Esztergom": ["Szakál Endre"],
+  "Veszprém": ["Szakál Endre"],
+};
+
+// A kancaregiszterben hasznalt megye-kod roviditesek -> teljes megyenev
+const MEGYE_KOD_TERKEP = {
+  BA: "Baranya",
+  BK: "Bács-Kiskun",
+  BN: "Borsod-Abaúj-Zemplén",
+  BS: "Békés",
+  CD: "Csongrád",
+  FR: "Fejér",
+  GN: "Győr-Moson-Sopron",
+  HR: "Hajdú-Bihar",
+  HS: "Heves",
+  KM: "Komárom-Esztergom",
+  ND: "Nógrád",
+  PT: "Pest",
+  SK: "Jász-Nagykun-Szolnok",
+  SR: "Szabolcs-Szatmár-Bereg",
+  SY: "Somogy",
+  TA: "Tolna",
+  VM: "Veszprém",
+  VS: "Vas",
+  ZA: "Zala",
+};
+
+function getFelugyeloTenyesztoBol(tenyeszto) {
+  if (!tenyeszto) return null;
+  if (tenyeszto.includes("Budapest")) {
+    return FELUGYELOK_MEGYE["Budapest"].join(", ");
+  }
+  const match = tenyeszto.match(/([A-ZÁÉÍÓÖŐÚÜŰ]{1,3})\s+([^,]+)$/);
+  if (!match) return null;
+  const megye = MEGYE_KOD_TERKEP[match[1]];
+  if (!megye || !FELUGYELOK_MEGYE[megye]) return null;
+  return FELUGYELOK_MEGYE[megye].join(", ");
+}
+
 const TASKS = [
   { id: "uh18", num: "1.", label: "Vemhessegi / ikervemhessegi UH", kind: "days", value: 18 },
   { id: "uh30", num: "2.", label: "30. napos UH", kind: "days", value: 30 },
@@ -314,14 +373,25 @@ function showMareSearchModal(onSelect) {
       return;
     }
     resultsEl.innerHTML = matches
-      .map(
-        (m, i) => `
+      .map((m, i) => {
+        const felugyelo = getFelugyeloTenyesztoBol(m.tenyeszto);
+        const felugyeloBlock = felugyelo
+          ? `<details class="felugyelo-details">
+              <summary>Lófelügyelő</summary>
+              <div class="felugyelo-nev">${felugyelo}</div>
+            </details>`
+          : "";
+        return `
       <div class="search-item" data-idx="${i}">
         <div class="search-item-name">${m.nev}</div>
         <div class="search-item-meta">${m.szuletes} \u00b7 ${m.tenyeszto}</div>
-      </div>`
-      )
+        ${felugyeloBlock}
+      </div>`;
+      })
       .join("");
+    resultsEl.querySelectorAll(".felugyelo-details").forEach((el) => {
+      el.addEventListener("click", (e) => e.stopPropagation());
+    });
     resultsEl.querySelectorAll(".search-item").forEach((el, i) => {
       el.onclick = () => {
         closeModal();
