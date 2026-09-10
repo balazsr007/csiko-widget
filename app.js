@@ -93,6 +93,18 @@ function saveData() {
 
 let state = loadData();
 
+// --- Kancaregiszter (kisberifelver.hu evenkenti nyilvantartasabol importalva) ---
+let kancaRegiszter = [];
+async function loadKancaRegiszter() {
+  try {
+    const resp = await fetch("./kancaregiszter.json");
+    kancaRegiszter = await resp.json();
+  } catch (e) {
+    console.error("Nem sikerult betolteni a kancaregisztert:", e);
+    kancaRegiszter = [];
+  }
+}
+
 function getActiveMare() {
   if (!state.mares.length) return null;
   state.activeIndex = Math.max(0, Math.min(state.activeIndex, state.mares.length - 1));
@@ -179,6 +191,74 @@ function showActionSheet({ title, actions }) {
   });
 }
 
+// onSelect(record) - record = kivalasztott kancaregiszter-sor, vagy null ha
+// a felhasznalo inkabb kezzel adja meg a nevet (nincs a nyilvantartasban).
+function showMareSearchModal(onSelect) {
+  const root = document.getElementById("modal-root");
+  root.classList.remove("hidden");
+  root.innerHTML = `
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal-sheet">
+        <h3>Kanca keresese a nyilvantartasban</h3>
+        <input id="mare-search-input" type="text" placeholder="Kezdj el gepelni a nevehez..." />
+        <div class="search-hint">${
+          kancaRegiszter.length
+            ? `${kancaRegiszter.length} kanca a 2026-os kisberifelver.hu nyilvantartasbol`
+            : "A nyilvantartas jelenleg nem erheto el - adj meg egyeni nevet."
+        }</div>
+        <div class="search-results" id="mare-search-results"></div>
+        <div class="btn-row">
+          <button class="btn secondary" id="modal-cancel">Megse</button>
+          <button class="btn" id="manual-entry-btn">Egyeni nev megadasa</button>
+        </div>
+      </div>
+    </div>`;
+
+  const input = document.getElementById("mare-search-input");
+  const resultsEl = document.getElementById("mare-search-results");
+  input.focus();
+
+  function renderResults(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      resultsEl.innerHTML = "";
+      return;
+    }
+    const matches = kancaRegiszter
+      .filter((m) => m.nev.toLowerCase().includes(q))
+      .slice(0, 30);
+    if (!matches.length) {
+      resultsEl.innerHTML = `<div class="search-empty">Nincs talalat - probald az "Egyeni nev megadasa" gombot.</div>`;
+      return;
+    }
+    resultsEl.innerHTML = matches
+      .map(
+        (m, i) => `
+      <div class="search-item" data-idx="${i}">
+        <div class="search-item-name">${m.nev}</div>
+        <div class="search-item-meta">${m.szuletes} \u00b7 ${m.tenyeszto}</div>
+      </div>`
+      )
+      .join("");
+    resultsEl.querySelectorAll(".search-item").forEach((el, i) => {
+      el.onclick = () => {
+        closeModal();
+        onSelect(matches[i]);
+      };
+    });
+  }
+
+  input.oninput = () => renderResults(input.value);
+  document.getElementById("modal-cancel").onclick = closeModal;
+  document.getElementById("manual-entry-btn").onclick = () => {
+    closeModal();
+    onSelect(null);
+  };
+  document.getElementById("modal-backdrop").onclick = (e) => {
+    if (e.target.id === "modal-backdrop") closeModal();
+  };
+}
+
 function askDate(defaultVal, onSubmit) {
   showInputModal({
     title: "Utolso sikeres fedeztetes datuma",
@@ -198,17 +278,33 @@ function askDate(defaultVal, onSubmit) {
 // Kanca-kezeles
 // ---------------------------------------------------------------------
 function addMare() {
-  showInputModal({
-    title: "Uj kanca neve",
-    placeholder: "pl. Csillag",
-    onSubmit: (name) => {
+  showMareSearchModal((selected) => {
+    if (selected) {
       askDate("", (date) => {
-        state.mares.push({ name, fedezesDatum: date, checklist: {} });
+        state.mares.push({
+          name: selected.nev,
+          fedezesDatum: date,
+          checklist: {},
+          registryId: selected.azonosito,
+        });
         state.activeIndex = state.mares.length - 1;
         saveData();
         renderAll();
       });
-    },
+    } else {
+      showInputModal({
+        title: "Kanca neve",
+        placeholder: "pl. Csillag",
+        onSubmit: (name) => {
+          askDate("", (date) => {
+            state.mares.push({ name, fedezesDatum: date, checklist: {} });
+            state.activeIndex = state.mares.length - 1;
+            saveData();
+            renderAll();
+          });
+        },
+      });
+    }
   });
 }
 function renameMare() {
@@ -270,17 +366,30 @@ function openMenu() {
   });
 }
 function firstRunSetup() {
-  showInputModal({
-    title: "Uj vemhes kanca neve",
-    placeholder: "pl. Csillag",
-    onSubmit: (name) => {
+  showMareSearchModal((selected) => {
+    if (selected) {
       askDate("", (date) => {
-        state.mares = [{ name, fedezesDatum: date, checklist: {} }];
+        state.mares = [
+          { name: selected.nev, fedezesDatum: date, checklist: {}, registryId: selected.azonosito },
+        ];
         state.activeIndex = 0;
         saveData();
         renderAll();
       });
-    },
+    } else {
+      showInputModal({
+        title: "Uj vemhes kanca neve",
+        placeholder: "pl. Csillag",
+        onSubmit: (name) => {
+          askDate("", (date) => {
+            state.mares = [{ name, fedezesDatum: date, checklist: {} }];
+            state.activeIndex = 0;
+            saveData();
+            renderAll();
+          });
+        },
+      });
+    }
   });
 }
 
@@ -619,7 +728,7 @@ async function sendTestNotification() {
 // ======================================================================
 // Inditas
 // ======================================================================
-function init() {
+async function init() {
   document.getElementById("nav-prev").onclick = () => switchMare(-1);
   document.getElementById("nav-next").onclick = () => switchMare(1);
   document.getElementById("nav-menu").onclick = openMenu;
@@ -628,6 +737,7 @@ function init() {
   document.getElementById("test-notif-btn").onclick = sendTestNotification;
 
   registerServiceWorker();
+  await loadKancaRegiszter();
 
   if (!state.mares.length) {
     firstRunSetup();

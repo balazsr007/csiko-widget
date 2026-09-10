@@ -9,6 +9,7 @@ const CORE_FILES = [
   "./styles.css",
   "./app.js",
   "./manifest.json",
+  "./kancaregiszter.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
 ];

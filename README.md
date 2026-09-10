@@ -63,6 +63,20 @@ const PUSH_SERVER_URL = "";  // <-- ide kerul majd pl. "https://sajat-szerver.hu
 Utána az "Értesítések engedélyezése" gomb már automatikusan
 összeköti a telefont a szerverrel is.
 
+## Kancaregiszter-kereső
+
+Új kanca hozzáadásakor kereshetsz a kisbérifelver.hu hivatalos,
+évente frissülő kancaregiszterében (`kancaregiszter.json`, jelenleg
+1281 bejegyzés) — gépeld be a nevet, és válassz a találatok közül
+(név, születési év, tenyésztő), vagy koppints az "Egyéni név
+megadása" gombra, ha a kancád nincs a nyilvántartásban.
+
+Az adatbázis évente frissül a forrásoldalon
+(https://kisberifelver.hu/index.php/tenyesztes/kancaregiszter) — ha
+új évjáratot szeretnél, töltsd le onnan az új fájlt, töltsd fel a
+Claude-beszélgetésbe, és kérd meg, hogy cserélje le a
+`kancaregiszter.json`-t, majd töltsd fel újra a mappát GitHubra.
+
 ## Adattárolás
 
 A kanca-adatok (nevek, fedeztetési dátumok, kipipált teendők) a
