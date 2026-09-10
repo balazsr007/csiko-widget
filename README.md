@@ -77,6 +77,18 @@ Az adatbázis évente frissül a forrásoldalon
 Claude-beszélgetésbe, és kérd meg, hogy cserélje le a
 `kancaregiszter.json`-t, majd töltsd fel újra a mappát GitHubra.
 
+## Kanca-fénykép
+
+A ⋮ menüben ("Kanca / beállítások") feltölthetsz egy fényképet az
+aktuálisan kiválasztott kancához. A kép automatikusan tömörítve (kb.
+20-100 KB méretűre kicsinyítve) mentődik a böngésző helyi
+tárolójába, majd áttetsző háttérként jelenik meg az egész
+alkalmazás mögött — a kártyák enyhén homályosított ("frosted
+glass") üvegként ülnek rajta, hogy minden szöveg jól olvasható
+maradjon. Kancánként külön kép tartozik; ha egy kancához nincs kép
+feltöltve, a háttér egyszerűen sötét marad. A menüben "Fénykép
+cserélése" / "Fénykép törlése" opciókkal bármikor módosíthatod.
+
 ## Adattárolás
 
 A kanca-adatok (nevek, fedeztetési dátumok, kipipált teendők) a

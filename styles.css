@@ -1,8 +1,8 @@
 :root {
   --bg: #0d0d0d;
-  --card-bg: #1a1a1a;
-  --row-bg: #232323;
-  --row-bg-2: #2a2a2a;
+  --card-bg: rgba(26, 26, 26, 0.82);
+  --row-bg: rgba(35, 35, 35, 0.82);
+  --row-bg-2: rgba(42, 42, 42, 0.82);
   --fg: #f2f2f2;
   --fg-muted: #8a8a8a;
   --green: #4caf50;
@@ -24,7 +24,27 @@ html, body {
   overscroll-behavior-y: contain;
 }
 
+#mare-photo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease, background-image 0.2s ease;
+}
+#mare-photo-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(13,13,13,0.35) 0%, rgba(13,13,13,0.75) 70%, rgba(13,13,13,0.95) 100%);
+}
+
 .app {
+  position: relative;
+  z-index: 1;
   max-width: 480px;
   margin: 0 auto;
   padding: env(safe-area-inset-top, 14px) 14px calc(env(safe-area-inset-bottom, 14px) + 56px);
@@ -64,6 +84,8 @@ html, body {
 /* --- Card --- */
 .card {
   background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 18px;
 }
@@ -129,6 +151,8 @@ html, body {
 /* --- Push section --- */
 .push-card {
   background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 16px 18px;
   display: flex;
@@ -179,6 +203,8 @@ html, body {
 }
 .task-row {
   background: var(--row-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 10px;
   padding: 10px 12px;
   display: flex;
@@ -219,6 +245,8 @@ html, body {
 }
 .sub-row {
   background: var(--row-bg-2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 8px;
   padding: 8px 10px;
   display: flex;

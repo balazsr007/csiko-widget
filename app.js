@@ -88,7 +88,83 @@ function loadData() {
   return { mares: [], activeIndex: 0 };
 }
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.error("Mentesi hiba:", e);
+    alert(
+      "Nem sikerult elmenteni - lehet, hogy betelt a bongeszo tarhelye (pl. tul sok/nagy fenykep miatt). " +
+        "Probald meg torolni egy regebbi fenykepet, vagy kisebb kepet feltolteni."
+    );
+  }
+}
+
+// ---------------------------------------------------------------------
+// Kanca-fenykep: feltoltes, tomorites, hatterkent megjelenites
+// ---------------------------------------------------------------------
+function compressImageFile(file, maxDim = 1000, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => reject(new Error("Nem sikerult beolvasni a kepet."));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error("Nem sikerult beolvasni a fajlt."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleMarePhotoFile(file) {
+  const mare = getActiveMare();
+  if (!mare || !file) return;
+  try {
+    const dataUrl = await compressImageFile(file);
+    mare.photo = dataUrl;
+    saveData();
+    renderPhotoBackground(mare);
+  } catch (e) {
+    console.error(e);
+    alert("Nem sikerult feldolgozni a kivalasztott kepet.");
+  }
+}
+
+function removeMarePhoto() {
+  const mare = getActiveMare();
+  if (!mare) return;
+  delete mare.photo;
+  saveData();
+  renderPhotoBackground(mare);
+}
+
+function renderPhotoBackground(mare) {
+  const bg = document.getElementById("mare-photo-bg");
+  if (mare && mare.photo) {
+    bg.style.backgroundImage = `url(${mare.photo})`;
+    bg.style.opacity = "0.55";
+  } else {
+    bg.style.opacity = "0";
+    setTimeout(() => {
+      if (bg.style.opacity === "0") bg.style.backgroundImage = "none";
+    }, 400);
+  }
 }
 
 let state = loadData();
@@ -360,16 +436,22 @@ function switchMare(delta) {
   renderAll();
 }
 function openMenu() {
-  showActionSheet({
-    title: "Kanca / beallitasok",
-    actions: [
-      { label: "Uj kanca hozzaadasa", onClick: addMare },
-      { label: "Kanca atnevezese", onClick: renameMare },
-      { label: "Fedeztetes datumanak modositasa", onClick: changeDate },
-      { label: "Teendok visszaallitasa", onClick: resetChecklist },
-      { label: "Kanca torlese", danger: true, onClick: deleteMare },
-    ],
-  });
+  const mare = getActiveMare();
+  const actions = [
+    { label: "Uj kanca hozzaadasa", onClick: addMare },
+    { label: "Kanca atnevezese", onClick: renameMare },
+    { label: "Fedeztetes datumanak modositasa", onClick: changeDate },
+    {
+      label: mare && mare.photo ? "Fenykep cserelese" : "Fenykep feltoltese",
+      onClick: () => document.getElementById("mare-photo-input").click(),
+    },
+  ];
+  if (mare && mare.photo) {
+    actions.push({ label: "Fenykep torlese", onClick: removeMarePhoto });
+  }
+  actions.push({ label: "Teendok visszaallitasa", onClick: resetChecklist });
+  actions.push({ label: "Kanca torlese", danger: true, onClick: deleteMare });
+  showActionSheet({ title: "Kanca / beallitasok", actions });
 }
 function firstRunSetup() {
   showMareSearchModal((selected) => {
@@ -654,6 +736,7 @@ function renderAll() {
   renderInfo(mare);
   renderChecklistToggle(mare);
   renderChecklist(mare);
+  renderPhotoBackground(mare);
 }
 
 // ======================================================================
@@ -741,6 +824,11 @@ async function init() {
   document.getElementById("checklist-toggle").onclick = toggleChecklistPanel;
   document.getElementById("enable-push-btn").onclick = enableNotifications;
   document.getElementById("test-notif-btn").onclick = sendTestNotification;
+  document.getElementById("mare-photo-input").onchange = (e) => {
+    const file = e.target.files[0];
+    e.target.value = ""; // hogy ugyanaz a fajl ujra kivalaszthato legyen kesobb
+    if (file) handleMarePhotoFile(file);
+  };
 
   registerServiceWorker();
   await loadKancaRegiszter();
