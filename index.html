@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Csikó Widget</title>
+<meta name="theme-color" content="#0d0d0d" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <div class="nav">
+    <button id="nav-prev">&#8249;</button>
+    <div class="mare-name" id="mare-name">Betöltés…</div>
+    <button id="nav-next">&#8250;</button>
+    <button class="menu-btn" id="nav-menu">&#8942;</button>
+  </div>
+
+  <div class="card">
+    <div class="ring-wrap" id="ring-wrap">
+      <div class="ring-center">
+        <div class="days" id="ring-days">–</div>
+        <div class="days-label" id="ring-days-label"></div>
+      </div>
+      <div class="urgent-badge hidden" id="urgent-badge">!</div>
+    </div>
+    <div class="info-grid" id="info-box"></div>
+  </div>
+
+  <div class="push-card">
+    <div class="title">Ellés-riasztás értesítések</div>
+    <div class="status" id="push-status">Kapcsold be, hogy push-értesítést kapj, ha megindul az ellés.</div>
+    <div class="btn-row">
+      <button class="btn" id="enable-push-btn">Értesítések engedélyezése</button>
+      <button class="btn secondary" id="test-notif-btn" disabled>Teszt-értesítés</button>
+    </div>
+  </div>
+
+  <button class="checklist-toggle" id="checklist-toggle">Teendők ▼</button>
+  <div class="checklist hidden" id="checklist"></div>
+
+</div>
+
+<div id="modal-root" class="hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
