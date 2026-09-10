@@ -32,7 +32,7 @@ const TASKS = [
       "Friss torolkozo",
       "Fertotlenitett ollo",
       "Clorexyderm gel",
-      "IKEA-s csomaglezaro (kobolzsinorhoz, ha el kell vagni)",
+      "IKEA-s csomaglezaro (koldokzsinorhoz, ha el kell vagni)",
       "Beontes eszkozei",
     ],
   },
