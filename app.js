@@ -11,7 +11,7 @@ const TRIMESZTER_ROVID_CIMKE = ["Hasznalhato", "Korlatozottan hasznalhato", "Nem
 const TRIMESZTER_JAVASLAT = [
   "Lovagolhato, hasznalhato",
   "Korlatozottan hasznalhato",
-  "Csak futoszar / szoron, vagta nelkul",
+  "Csak futoszar / szoren, vagta nelkul",
 ];
 
 // Megyenkenti lofelugyelok (a fajtaegyesulet altal megadott lista alapjan)
@@ -80,12 +80,17 @@ const TASKS = [
   { id: "herpesz1", num: "4.", label: "1. herpesz injekcio (5 honap)", kind: "months", value: 5 },
   { id: "herpesz2", num: "5.", label: "2. herpesz injekcio (7 honap)", kind: "months", value: 7 },
   { id: "herpesz3", num: "6.", label: "3. herpesz injekcio (9 honap)", kind: "months", value: 9 },
-  { id: "kobi", num: "7.", label: "Kombinalt oltas + vervetel (10 honap)", kind: "months", value: 10 },
-  { id: "uh300", num: "8.", label: "300. napos UH (csiko befordult-e)", kind: "days", value: 300 },
-  { id: "feregh", num: "9.", label: "Fereghajtas", kind: "days", value: 300 },
-  { id: "patko", num: "10.", label: "Patko levetele", kind: "days", value: 310 },
   {
-    id: "ellesi_csomag", num: "11.", label: "Ellesi csomag osszekeszitese",
+    id: "abrak_noveles", num: "7.",
+    label: "Abrak-adag fokozatos novelese (9,5 honap - kb. 3 het alatt, napi legalabb 3x: reggel/delben/este)",
+    kind: "days", value: 285,
+  },
+  { id: "kobi", num: "8.", label: "Kombinalt oltas + vervetel (10 honap)", kind: "months", value: 10 },
+  { id: "uh300", num: "9.", label: "300. napos UH (csiko befordult-e)", kind: "days", value: 300 },
+  { id: "feregh", num: "10.", label: "Fereghajtas", kind: "days", value: 300 },
+  { id: "patko", num: "11.", label: "Patko levetele", kind: "days", value: 310 },
+  {
+    id: "ellesi_csomag", num: "12.", label: "Ellesi csomag osszekeszitese",
     kind: "days", value: GESZTACIOS_NAPOK - 20,
     subItems: [
       "Friss torolkozo",
@@ -426,6 +431,25 @@ function askDate(defaultVal, onSubmit) {
   });
 }
 
+// Telefonszam bekerese - erre a szamra megy majd a GSM-hivas az
+// elles-jelzo rendszertol, ha ez a kanca riaszt. Konnyed formai
+// ellenorzes (nemzetkozi vagy helyi formatum is elfogadott).
+function askPhoneNumber(defaultVal, onSubmit) {
+  showInputModal({
+    title: "Telefonszam (GSM-hivashoz elles eseten)",
+    placeholder: "pl. +36301234567",
+    initialValue: defaultVal || "",
+    onSubmit: (val) => {
+      const tisztitott = val.trim();
+      if (!/^\+?[0-9\s-]{6,}$/.test(tisztitott)) {
+        alert("Ez nem tunik ervenyes telefonszamnak. Probald pl. igy: +36301234567");
+        return;
+      }
+      onSubmit(tisztitott);
+    },
+  });
+}
+
 // ---------------------------------------------------------------------
 // Kanca-kezeles
 // ---------------------------------------------------------------------
@@ -433,16 +457,20 @@ function addMare() {
   showMareSearchModal((selected) => {
     if (selected) {
       askDate("", (date) => {
-        state.mares.push({
-          name: selected.nev,
-          fedezesDatum: date,
-          checklist: {},
-          registryId: selected.azonosito,
-          tenyeszto: selected.tenyeszto,
+        askPhoneNumber("", (telefonszam) => {
+          state.mares.push({
+            name: selected.nev,
+            fedezesDatum: date,
+            checklist: {},
+            registryId: selected.azonosito,
+            tenyeszto: selected.tenyeszto,
+            telefonszam,
+          });
+          state.activeIndex = state.mares.length - 1;
+          saveData();
+          renderAll();
+          szinkronizaljPushFeliratkozast();
         });
-        state.activeIndex = state.mares.length - 1;
-        saveData();
-        renderAll();
       });
     } else {
       showInputModal({
@@ -450,10 +478,13 @@ function addMare() {
         placeholder: "pl. Csillag",
         onSubmit: (name) => {
           askDate("", (date) => {
-            state.mares.push({ name, fedezesDatum: date, checklist: {} });
-            state.activeIndex = state.mares.length - 1;
-            saveData();
-            renderAll();
+            askPhoneNumber("", (telefonszam) => {
+              state.mares.push({ name, fedezesDatum: date, checklist: {}, telefonszam });
+              state.activeIndex = state.mares.length - 1;
+              saveData();
+              renderAll();
+              szinkronizaljPushFeliratkozast();
+            });
           });
         },
       });
@@ -489,6 +520,7 @@ function deleteMare() {
   state.mares.splice(state.activeIndex, 1);
   state.activeIndex = Math.max(0, state.activeIndex - 1);
   saveData();
+  szinkronizaljPushFeliratkozast();
   if (!state.mares.length) return firstRunSetup();
   renderAll();
 }
@@ -513,6 +545,18 @@ function openMenu() {
     { label: "Kanca atnevezese", onClick: renameMare },
     { label: "Fedeztetes datumanak modositasa", onClick: changeDate },
     {
+      label: mare && mare.kancaId
+        ? `Riasztasi azonosito modositasa (jelenleg: ${mare.kancaId})`
+        : "Riasztasi azonosito beallitasa (elles-riasztashoz)",
+      onClick: setKancaId,
+    },
+    {
+      label: mare && mare.telefonszam
+        ? `Telefonszam modositasa (jelenleg: ${mare.telefonszam})`
+        : "Telefonszam beallitasa (GSM-hivashoz)",
+      onClick: setTelefonszam,
+    },
+    {
       label: mare && mare.photo ? "Fenykep cserelese" : "Fenykep feltoltese",
       onClick: () => document.getElementById("mare-photo-input").click(),
     },
@@ -524,22 +568,55 @@ function openMenu() {
   actions.push({ label: "Kanca torlese", danger: true, onClick: deleteMare });
   showActionSheet({ title: "Kanca / beallitasok", actions });
 }
+
+function setKancaId() {
+  const mare = getActiveMare();
+  if (!mare) return;
+  showInputModal({
+    title: "Riasztasi azonosito",
+    placeholder: "pl. 1 (ugyanaz a szam, amit a Raspberry Pi-n is beallitottal ehhez a kancahoz)",
+    initialValue: mare.kancaId || "",
+    onSubmit: (ertek) => {
+      const uj_ertek = ertek.trim();
+      mare.kancaId = uj_ertek || undefined;
+      saveData();
+      renderAll();
+      // ha mar be van kapcsolva a push, azonnal frissitsuk a szerveren
+      // is, hogy tudja, mostantol errol a kancarol is ertesitsen minket
+      szinkronizaljPushFeliratkozast();
+    },
+  });
+}
+
+function setTelefonszam() {
+  const mare = getActiveMare();
+  if (!mare) return;
+  askPhoneNumber(mare.telefonszam || "", (telefonszam) => {
+    mare.telefonszam = telefonszam;
+    saveData();
+    renderAll();
+    szinkronizaljPushFeliratkozast();
+  });
+}
 function firstRunSetup() {
   showMareSearchModal((selected) => {
     if (selected) {
       askDate("", (date) => {
-        state.mares = [
-          {
-            name: selected.nev,
-            fedezesDatum: date,
-            checklist: {},
-            registryId: selected.azonosito,
-            tenyeszto: selected.tenyeszto,
-          },
-        ];
-        state.activeIndex = 0;
-        saveData();
-        renderAll();
+        askPhoneNumber("", (telefonszam) => {
+          state.mares = [
+            {
+              name: selected.nev,
+              fedezesDatum: date,
+              checklist: {},
+              registryId: selected.azonosito,
+              tenyeszto: selected.tenyeszto,
+              telefonszam,
+            },
+          ];
+          state.activeIndex = 0;
+          saveData();
+          renderAll();
+        });
       });
     } else {
       showInputModal({
@@ -547,10 +624,12 @@ function firstRunSetup() {
         placeholder: "pl. Csillag",
         onSubmit: (name) => {
           askDate("", (date) => {
-            state.mares = [{ name, fedezesDatum: date, checklist: {} }];
-            state.activeIndex = 0;
-            saveData();
-            renderAll();
+            askPhoneNumber("", (telefonszam) => {
+              state.mares = [{ name, fedezesDatum: date, checklist: {}, telefonszam }];
+              state.activeIndex = 0;
+              saveData();
+              renderAll();
+            });
           });
         },
       });
@@ -708,6 +787,18 @@ function renderInfo(mare) {
           </div>`
         : ""
     }
+    <div>
+      <div class="label">Riasztási azonosító</div>
+      <div class="value" style="${mare.kancaId ? "" : "color:var(--fg-muted);font-weight:400;"}">${
+        mare.kancaId ? mare.kancaId : "nincs beallitva"
+      }</div>
+    </div>
+    <div>
+      <div class="label">Telefonszám (GSM-híváshoz)</div>
+      <div class="value" style="${mare.telefonszam ? "" : "color:var(--fg-muted);font-weight:400;"}">${
+        mare.telefonszam ? mare.telefonszam : "nincs beallitva"
+      }</div>
+    </div>
     <div class="trimeszter-advice" style="color:${triSzin}">${triJavaslat}</div>
   `;
 }
@@ -840,8 +931,8 @@ function renderAll() {
 // PUSH_SERVER_URL-t, majd hivd meg a subscribeToPush() fuggvenyt (pl.
 // az "Ertesitesek engedelyezese" gomb mar meg is teszi automatikusan,
 // ha ezt a ket erteket kitoltod).
-const VAPID_PUBLIC_KEY = ""; // <-- ide kerul majd a szerver VAPID kulcsa
-const PUSH_SERVER_URL = ""; // <-- ide kerul majd pl. "https://sajat-szerver.hu/subscribe"
+const VAPID_PUBLIC_KEY = "BNzii4AxCN9PrRV_IqpJ40GMJPVO_4-LsjOH-UvssYQLMGxLzgXPNVV2XSiN6Z_1ZNQe_TzUm6IIk449KAqjnbU"; // mar legeneralva, lasd push_szerver/README.md
+const PUSH_SERVER_URL = ""; // <-- ide kerul a sajat Cloudflare Tunnel-es cimed, pl. "https://push.sajatdomained.hu/subscribe"
 
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -853,6 +944,53 @@ function urlBase64ToUint8Array(base64String) {
 async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
   return navigator.serviceWorker.register("./sw.js");
+}
+
+// Azok a kanca-azonositok (LoRa-cimek), amiket ezen a keszuleken
+// hozzaadott kancakhoz allitottunk be - EZEKROL akarunk push-t kapni.
+// Ha ket csaladtag figyeli ugyanazt a kancat kulon-kulon telefonon,
+// mindketten ugyanazt a kanca-azonositot allitjak be a sajat
+// keszulekukon - igy mindketten megkapjak a riasztast, de senki mas nem.
+function getWatchedKancaIds() {
+  const idk = state.mares.map((m) => m.kancaId).filter((id) => id && id.trim() !== "");
+  return [...new Set(idk)];
+}
+
+// Kanca-azonosito -> telefonszam terkep (csak azoknal a kancaknal, ahol
+// mindket mezo be van allitva). Ez alapjan tudja majd a Raspberry Pi,
+// kit hivjon fel GSM-en, ha EPPEN AZ a kanca riaszt.
+function getKancaTelefonszamok() {
+  const terkep = {};
+  state.mares.forEach((m) => {
+    if (m.kancaId && m.kancaId.trim() !== "" && m.telefonszam && m.telefonszam.trim() !== "") {
+      terkep[m.kancaId.trim()] = m.telefonszam.trim();
+    }
+  });
+  return terkep;
+}
+
+// Ha mar engedelyezve van a push, ujra elkuldi a szervernek a
+// jelenleg figyelt kanca-azonositok listajat - ezt hivjuk meg minden
+// olyan valtozasnal (uj kanca, torles, azonosito modositas), ami
+// befolyasolja, mirol akarunk ertesitest kapni.
+async function szinkronizaljPushFeliratkozast() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (!PUSH_SERVER_URL) return;
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (!sub) return; // meg nincs aktiv feliratkozas, nincs mit szinkronizalni
+    const kancaIdk = getWatchedKancaIds();
+    const telefonszamok = getKancaTelefonszamok();
+    await fetch(PUSH_SERVER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...sub.toJSON(), kanca_idk: kancaIdk, telefonszamok }),
+    });
+  } catch (e) {
+    console.error("Push-feliratkozas szinkronizalasa sikertelen:", e);
+  }
 }
 
 async function enableNotifications() {
@@ -868,6 +1006,9 @@ async function enableNotifications() {
   }
   const reg = await registerServiceWorker();
 
+  const kancaIdk = getWatchedKancaIds();
+  const telefonszamok = getKancaTelefonszamok();
+
   if (VAPID_PUBLIC_KEY && PUSH_SERVER_URL && "PushManager" in window) {
     try {
       const sub = await reg.pushManager.subscribe({
@@ -877,9 +1018,15 @@ async function enableNotifications() {
       await fetch(PUSH_SERVER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sub),
+        body: JSON.stringify({ ...sub.toJSON(), kanca_idk: kancaIdk, telefonszamok }),
       });
-      statusEl.textContent = "Ertesitesek engedelyezve es osszekotve a szerverrel.";
+      if (kancaIdk.length) {
+        statusEl.textContent = `Ertesitesek engedelyezve. Figyelt kancak azonositoi: ${kancaIdk.join(", ")}.`;
+      } else {
+        statusEl.textContent =
+          "Ertesitesek engedelyezve, DE meg egyik kancahoz sincs riasztasi azonosito beallitva - " +
+          "a ⋮ menuben allitsd be, kulonben nem fogsz riasztast kapni!";
+      }
     } catch (e) {
       console.error(e);
       statusEl.textContent = "Engedelyezve, de a szerver-osszekotes nem sikerult.";
